@@ -1,0 +1,90 @@
+## Ignore Visual Studio temporary files, build results, and
+## user-specific files.
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache and folders
+.vs/
+.vscode/
+
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+
+# Rider / JetBrains
+.idea/
+*.dotCover
+
+# NuGet
+*.nupkg
+packages/
+*.snupkg
+.nuget/
+
+# Logs
+*.log
+*.tlog
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Python (since you're mixing courses)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+*.ipynb_checkpoints/
+
+# Node.js (if any JS tooling exists)
+node_modules/
+
+# Jupyter/Data Science
+*.ipynb_checkpoints
+*.db
+*.sqlite
+*.csv
+*.tsv
+
+# OS/Editor junk
+Thumbs.db
+.DS_Store
+*.swp
+*.bak
+*.tmp
+
+# Your custom section
+.archives/
+
+# =============================
+# SQL Server Database Projects
+# =============================
+
+# User/machine-specific SQL project files
+*.dbmdl
+*.jfm
+
+# SQL tools and generated temporary files
+*.mdf
+*.ldf
+*.ndf
+*.rdl.data
+*.rdl.designer
+
+# Schema Compare / Data Compare
+SchemaCompare/*
+DataCompare/*
+
+# SSMS backup or temp scripts
+*.bak
+*.trn
