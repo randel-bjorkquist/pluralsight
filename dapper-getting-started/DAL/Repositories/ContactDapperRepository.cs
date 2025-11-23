@@ -1,25 +1,16 @@
 ﻿using DAL.Core.Utilities;
 using DAL.Entities;
 using Dapper;
-using Microsoft.Data.SqlClient;
-using System.Data;
 
 namespace DAL.Repositories;
 
-public class ContactRepository : IContactRepository
+public class ContactDapperRepository : Repository, IContactRepository
 {
-  private readonly IDbConnection dbConnection;
-
-  public ContactRepository(string db_connection_string)
-  {
-    dbConnection = new SqlConnection(db_connection_string);
-  }
+  public ContactDapperRepository(string db_connection_string) 
+    : base(db_connection_string) { }
 
   public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
-    => dbConnection.QueryAsync<ContactEntity>("SELECT * FROM [Contact]")
-                   .GetAwaiter()
-                   .GetResult()
-                   .ToList();
+    => await dbConnection.QueryAsync<ContactEntity>("SELECT * FROM [Contact]");
 
   public async Task<ContactEntity?> GetByIDAsync(int id, CancellationToken token = default)
   {
@@ -32,7 +23,7 @@ public class ContactRepository : IContactRepository
     var separator  = ',';
 
     var command = $"SELECT C.* "
-                + $"FROM Contact AS C "
+                + $"FROM [Contact] AS C "
                 + $"INNER JOIN fn_CsvToInt(@IDs, @separator) AS IDs "
                 + $"ON C.ID = IDs.[value]";
 
@@ -63,11 +54,17 @@ public class ContactRepository : IContactRepository
                 + "    Title     = @Title "
                 + "WHERE ID = @ID";
 
-    var affected_rows = await dbConnection.ExecuteAsync(command, entity);
-    
-//    if(affected_rows != 1)
-//      Debug.WriteLine($"While updating Contact ({entity.ID}), more than 1 row was affected.");
-//      Debug.WriteLine(throw new InvalidOperationException($"While updating Contact with ID {entity.ID}, more than 1 row was affected.");
+    #region COMMENTED OUT: R&D code (check affected rows)
+    //
+    //    var affected_rows = await dbConnection.ExecuteAsync(command, entity);
+    //    
+    //    if(affected_rows != 1)
+    //      Debug.WriteLine($"While updating Contact ({entity.ID}), more than 1 row was affected.");
+    //      Debug.WriteLine(throw new InvalidOperationException($"While updating Contact with ID {entity.ID}, more than 1 row was affected.");
+    //
+    #endregion
+
+    await dbConnection.ExecuteAsync(command, entity);
 
     return entity;
 
@@ -77,9 +74,6 @@ public class ContactRepository : IContactRepository
 
   public async Task<bool> DeleteAsync(int id, CancellationToken token = default)
   {
-    //var affected_rows = await dbConnection.ExecuteAsync( "DELETE FROM [Contact] WHERE ID = @ID"
-    //                                                    ,new { ID = id } );
-    
     var command = "DELETE FROM [Contact] WHERE ID = @ID";
     var affected_rows = await dbConnection.ExecuteAsync( command
                                                         ,new { ID = id });

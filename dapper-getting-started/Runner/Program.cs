@@ -1,35 +1,35 @@
 ﻿using DAL.Core.Infrastructure;
 using DAL.Entities;
 using DAL.Repositories;
-using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
 namespace Runner;
 
 internal class Program
 {
-  // Private static IConfigurationRoot field (global, outside Main—as per tutorial)
-  private static IConfigurationRoot? config;
-
-  static void Main(string[] args)
+  static void Main()
   {
-    // Build config once in Main
-    BuildConfiguration();
+    //NOTE: defines which repository: 'ContactDapperRepository' or 'ContactDapperContribRepository' is being configured
+    RepositoryFactory.isContrib = false;
 
-    //GetAll_ShouldReturn_6Contacts();
+    // Build config once in Main
+    //BuildConfiguration();
+
+    GetAll_ShouldReturn_6Contacts();
     //Insert_ShouldAssignIdentity_ToNewEntity();
 
     //var id = 8;
-    //GetByID_ShouldReturn_ContactEntity(id);
+    var id = Insert_ShouldAssignIdentity_ToNewEntity();
+    GetByID_ShouldReturn_ContactEntity(id);
 
     //var ids = new List<int> { 1, 3, 5, 7 };
     //GetByIDs_ShouldReturn_ContactEntities(ids);
 
     //var id = 8;
-    //Update_ShouldModify_ExistingEntity(id);
+    Update_ShouldModify_ExistingEntity(id);
 
     //var id = 8;
-    //Delete_ShouldRemove_ExistingEntity(id);
+    Delete_ShouldRemove_ExistingEntity(id);
 
     #region COMMENTED OUT: R&D code for future reference
 
@@ -46,7 +46,8 @@ internal class Program
   private static void GetAll_ShouldReturn_6Contacts()
   {
     // Arrange
-    var repository = ContactRepository();
+    var row_count  = 6;
+    var repository = RepositoryFactory.CreateContactRepository();
 
 
     // Act
@@ -56,14 +57,14 @@ internal class Program
 
     // Assert
     Console.WriteLine($"Total Contacts: {contacts.Count()}");
-    Debug.Assert(contacts.Count() == 6, "Expected 6 contacts in the database.");
+    Debug.Assert(contacts.Count() == row_count, $"Expected '{row_count}' contacts in the database.");
     contacts.Output();
   }
 
-  private static void Insert_ShouldAssignIdentity_ToNewEntity() 
+  private static int Insert_ShouldAssignIdentity_ToNewEntity() 
   {
     // Arrange
-    IContactRepository repository = ContactRepository();
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
     var contact = new ContactEntity { FirstName = "Joe"
                                      ,LastName  = "Blow"
                                      ,Email     = "joe.blow@gmail.com"
@@ -82,13 +83,15 @@ internal class Program
 
     contact.Output();
     new_contact_entity.Output();
+
+    return new_contact_entity.ID;
   }
 
   private static void GetByID_ShouldReturn_ContactEntity(int id)
   {
     // Arrange
-    IContactRepository repository = ContactRepository();
-    
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
+
     // Act
     var contact = repository.GetByIDAsync(id)
                             .GetAwaiter()
@@ -98,15 +101,15 @@ internal class Program
     Debug.Assert(contact != null, $"Contact with ID {id} should exist.");
     contact.Output();
 
-    Debug.Assert(contact.FirstName == "Joe", "First name should be Joe.");
-    Debug.Assert(contact.FirstName == "Blow", "Last name should be Blow.");
+    Debug.Assert(contact.FirstName == "Joe"  ,"First name should be Joe.");
+    Debug.Assert(contact.LastName  == "Blow" ,"Last name should be Blow.");
   }
 
   private static void GetByIDs_ShouldReturn_ContactEntities(IEnumerable<int> ids)
   {
     // Arrange
-    IContactRepository repository = ContactRepository();
-    
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
+
     // Act
     var contacts = repository.GetByIDsAsync(ids)
                              .GetAwaiter()
@@ -120,7 +123,7 @@ internal class Program
   private static void Update_ShouldModify_ExistingEntity(int id)
   {
     // Arrange
-    IContactRepository repository = ContactRepository();
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
     var contact = repository.GetByIDAsync(id)
                             .GetAwaiter()
                             .GetResult();
@@ -135,7 +138,7 @@ internal class Program
               .GetResult();
 
     // 2nd Act: Retrieve again to verify
-    IContactRepository repository2 = ContactRepository();
+    IContactRepository repository2 = RepositoryFactory.CreateContactRepository();
     var updated_contact = repository2.GetByIDAsync(id)
                                      .GetAwaiter()
                                      .GetResult();
@@ -151,8 +154,8 @@ internal class Program
   private static void Delete_ShouldRemove_ExistingEntity(int id)
   {
     // Arrange
-    IContactRepository repository = ContactRepository();
-    
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
+
     // Act: Delete
     var result = repository.DeleteAsync(id)
                            .GetAwaiter()
@@ -161,7 +164,7 @@ internal class Program
     Debug.Assert(result == true, $"Contact with ID '{id}' should be deleted.");
 
     // Try to retrieve again to verify deletion
-    IContactRepository repository2 = ContactRepository();
+    IContactRepository repository2 = RepositoryFactory.CreateContactRepository();
     var deleted_contact = repository2.GetByIDAsync(id)
                                      .GetAwaiter()
                                      .GetResult();
@@ -170,28 +173,62 @@ internal class Program
     Debug.Assert(deleted_contact == null, $"Contact with ID '{id}' should be deleted.");
   }
 
-  private static void BuildConfiguration()
+  private static class RepositoryFactory
   {
-    var builder = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                                            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-    config = builder.Build();
-  }
-
-  private static IContactRepository ContactRepository()
-  {
-    //NOTE: using connection string from appsettings.json
-    //string dbConnectionString = config?.GetConnectionString("DefaultConnection") ?? 
-    //                            throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    public static bool isContrib = true;
 
     //NOTE: building connection string manually via SqlFactory
-    string dbConnectionString = new SqlFactory().BuildSqlConnection( server: "localhost\\SQL2022"
-                                                                    ,database: "Pluralsight_ContactDB"
-                                                                    ,username: "sa"
-                                                                    ,password: "SQLP@ssw0rd"
-                                                                    ,encrypt: true
-                                                                    ,trust_certificate: true).ConnectionString;
+    private static string ConnectionString = new SqlFactory().BuildSqlConnection( server: "localhost\\SQL2022"
+                                                                                 ,database: "Pluralsight_ContactDB"
+                                                                                 ,username: "sa"
+                                                                                 ,password: "SQLP@ssw0rd"
+                                                                                 ,encrypt: true
+                                                                                 ,trust_certificate: true).ConnectionString;
 
-    return new DAL.Repositories.ContactRepository(dbConnectionString);
+    public static IContactRepository CreateContactRepository()
+      => isContrib 
+          ? CreateContactDapperContribRepository()
+          : CreateContactDapperRepository();
+
+    public static IContactRepository CreateContactDapperRepository()
+      => new ContactDapperRepository(ConnectionString);
+
+    public static IContactRepository CreateContactDapperContribRepository()
+      => new ContactDapperContribRepository(ConnectionString);
   }
+
+  #region COMMENTED OUT: R&D code (BuildConfiguration and ContactDapperRepository methods)
+  //
+  // References needed:
+  //using Microsoft.Extensions.Configuration;
+  //
+  // Private static IConfigurationRoot field (global, outside Main—as per tutorial)
+  //private static IConfigurationRoot? config;
+  //
+  //private static void BuildConfiguration()
+  //{
+  //  var builder = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+  //                                          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+  //
+  //  config = builder.Build();
+  //}
+  //
+  //private static IContactRepository ContactDapperRepository()
+  //{
+  //  //NOTE: using connection string from appsettings.json
+  //  //string dbConnectionString = config?.GetConnectionString("DefaultConnection") ?? 
+  //  //                            throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+  //
+  //  //NOTE: building connection string manually via SqlFactory
+  //  string dbConnectionString = new SqlFactory().BuildSqlConnection( server: "localhost\\SQL2022"
+  //                                                                  ,database: "Pluralsight_ContactDB"
+  //                                                                  ,username: "sa"
+  //                                                                  ,password: "SQLP@ssw0rd"
+  //                                                                  ,encrypt: true
+  //                                                                  ,trust_certificate: true).ConnectionString;
+  //
+  //  return new DAL.Repositories.ContactDapperRepository(dbConnectionString);
+  //}
+  //
+  #endregion
 }
