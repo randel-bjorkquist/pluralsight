@@ -4,7 +4,7 @@ namespace DAL.Repositories;
 
 public interface IContactRepository
 {
-  Task<IEnumerable<ContactEntity>> GetAll(CancellationToken token = default);
+  Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default);
   Task<ContactEntity> GetByIDAsync(int id, CancellationToken token = default);
   Task<ContactEntity> GetByIDsAsync(IEnumerable<int> ids, CancellationToken token = default);
 

@@ -1,39 +1,48 @@
 ﻿using DAL.Entities;
+using Dapper;
+using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Linq;
 
 namespace DAL.Repositories;
 
 public class ContactRepository : IContactRepository
 {
-  //private readonly IDbConnection dbConnection;
+  private readonly IDbConnection dbConnection;
 
-  public Task<ContactEntity> CreateAsync(ContactEntity entity, CancellationToken token = default)
+  public ContactRepository(string db_connection_string)
   {
-      throw new NotImplementedException();
+    dbConnection = new SqlConnection(db_connection_string);
   }
 
-  public Task<ContactEntity> DeleteAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> CreateAsync(ContactEntity entity, CancellationToken token = default)
   {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
   }
 
-  public Task<IEnumerable<ContactEntity>> GetAll(CancellationToken token = default)
+  public async Task<ContactEntity> DeleteAsync(ContactEntity entity, CancellationToken token = default)
   {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
   }
 
-  public Task<ContactEntity> GetByIDAsync(int id, CancellationToken token = default)
+  public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
+    => dbConnection.QueryAsync<ContactEntity>("SELECT * FROM Contact")
+                   .GetAwaiter()
+                   .GetResult()
+                   .ToList();
+
+  public async Task<ContactEntity> GetByIDAsync(int id, CancellationToken token = default)
   {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
   }
 
-  public Task<ContactEntity> GetByIDsAsync(IEnumerable<int> ids, CancellationToken token = default)
+  public async Task<ContactEntity> GetByIDsAsync(IEnumerable<int> ids, CancellationToken token = default)
   {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
   }
 
-  public Task<ContactEntity> UpdateAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> UpdateAsync(ContactEntity entity, CancellationToken token = default)
   {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
   }
 }
