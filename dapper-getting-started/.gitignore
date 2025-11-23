@@ -88,3 +88,9 @@ DataCompare/*
 # SSMS backup or temp scripts
 *.bak
 *.trn
+
+
+# =============================
+# Class Libraries Projects
+# =============================
+**mcsCore.Services
