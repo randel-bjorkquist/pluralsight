@@ -18,7 +18,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     var fill_options = options as ContactFillOptions ?? new ContactFillOptions();
     
     var command = "SELECT C.* FROM [Contact] AS C WHERE ID = @ID;"
-                + "SELECT A.ID, A.ContactID, A.AddressType AS 'Type', A.StreetAddress AS 'Street', A.City, A.StateID, A.PostalCode FROM [Address] AS A WHERE ContactID = @ID";
+                + "SELECT A.* FROM [Address] AS A WHERE ContactID = @ID";
 
     using (var multiple_results = await dbConnection.QueryMultipleAsync(command, new { ID = id }))
     {
