@@ -1,4 +1,5 @@
 ﻿using DAL.Core.Infrastructure;
+using DAL.Core.Models.Options;
 using DAL.Entities;
 using DAL.Repositories;
 using System.Diagnostics;
@@ -12,24 +13,37 @@ internal class Program
     //NOTE: defines which repository: 'ContactDapperRepository' or 'ContactDapperContribRepository' is being configured
     RepositoryFactory.isContrib = false;
 
-    // Build config once in Main
-    //BuildConfiguration();
+    #region Initial Test Calls, simply CRUD operations
 
-    GetAll_ShouldReturn_6Contacts();
+    //GetAll_ShouldReturn_6Contacts();
     //Insert_ShouldAssignIdentity_ToNewEntity();
 
     //var id = 8;
-    var id = Insert_ShouldAssignIdentity_ToNewEntity();
-    GetByID_ShouldReturn_ContactEntity(id);
+    //var id = Insert_ShouldAssignIdentity_ToNewEntity();
+    //GetByID_ShouldReturn_ContactEntity(id);
 
     //var ids = new List<int> { 1, 3, 5, 7 };
     //GetByIDs_ShouldReturn_ContactEntities(ids);
 
     //var id = 8;
-    Update_ShouldModify_ExistingEntity(id);
+    //Update_ShouldModify_ExistingEntity(id);
 
     //var id = 8;
-    Delete_ShouldRemove_ExistingEntity(id);
+    //Delete_ShouldRemove_ExistingEntity(id);
+
+    #endregion
+
+
+    var repository = RepositoryFactory.CreateContactRepository();
+
+    var mjs_id  = 1;
+    var options = new ContactFillOptions { IncludeAddressesProperty = true };
+
+    var mj = repository.GetByIDAsync(mjs_id, options)
+                       .GetAwaiter()
+                       .GetResult();
+    mj?.Output();
+
 
     #region COMMENTED OUT: R&D code for future reference
 
@@ -46,8 +60,8 @@ internal class Program
   private static void GetAll_ShouldReturn_6Contacts()
   {
     // Arrange
-    var row_count  = 6;
-    var repository = RepositoryFactory.CreateContactRepository();
+    var row_count   = 6;
+    var repository  = RepositoryFactory.CreateContactRepository();
 
 
     // Act
@@ -177,13 +191,16 @@ internal class Program
   {
     public static bool isContrib = true;
 
-    //NOTE: building connection string manually via SqlFactory
-    private static string ConnectionString = new SqlFactory().BuildSqlConnection( server: "localhost\\SQL2022"
-                                                                                 ,database: "Pluralsight_ContactDB"
-                                                                                 ,username: "sa"
-                                                                                 ,password: "SQLP@ssw0rd"
-                                                                                 ,encrypt: true
-                                                                                 ,trust_certificate: true).ConnectionString;
+    //NOTE: Builds a connection string manually via SqlFactory;
+    //      DO NOT use the 'expression-bodied' syntax here!
+    private static readonly string ConnectionString 
+      = new SqlFactory().BuildSqlConnection( server: "localhost\\SQL2022"
+                                            ,database: "Pluralsight_ContactDB"
+                                            ,username: "sa"
+                                            ,password: "SQLP@ssw0rd"
+                                            ,encrypt: true
+                                            ,trust_certificate: true)
+                        .ConnectionString;
 
     public static IContactRepository CreateContactRepository()
       => isContrib 
@@ -199,10 +216,14 @@ internal class Program
 
   #region COMMENTED OUT: R&D code (BuildConfiguration and ContactDapperRepository methods)
   //
-  // References needed:
+  //References needed:
   //using Microsoft.Extensions.Configuration;
   //
-  // Private static IConfigurationRoot field (global, outside Main—as per tutorial)
+  //Place into: Main method:
+  //Build config once in Main
+  //BuildConfiguration();
+  //
+  //Private static IConfigurationRoot field (global, outside Main—as per tutorial)
   //private static IConfigurationRoot? config;
   //
   //private static void BuildConfiguration()

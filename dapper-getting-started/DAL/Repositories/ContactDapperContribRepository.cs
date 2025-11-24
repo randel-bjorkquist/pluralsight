@@ -1,4 +1,5 @@
-﻿using DAL.Core.Utilities;
+﻿using DAL.Core.Models.Options;
+using DAL.Core.Utilities;
 using DAL.Entities;
 using Dapper;
 using Dapper.Contrib.Extensions;
@@ -25,10 +26,16 @@ public class ContactDapperContribRepository : Repository, IContactRepository
   public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
     => await dbConnection.GetAllAsync<ContactEntity>();
 
-  public async Task<ContactEntity?> GetByIDAsync(int id, CancellationToken token = default)
-    => await dbConnection.GetAsync<ContactEntity?>(id);
+  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
+  {
+    //NOTE: Using Dapper.Contrib's GetAsync method for simplicity ...
+    //=> await dbConnection.GetAsync<ContactEntity?>(id);
 
-  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, CancellationToken token = default)
+    var results = await GetByIDsAsync( [id], options, token); 
+    return results.FirstOrDefault();
+  }
+
+  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
   {
     var separator = ',';
     var commant = "SELECT C.* "

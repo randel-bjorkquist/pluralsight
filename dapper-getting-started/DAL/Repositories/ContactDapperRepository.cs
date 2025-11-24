@@ -1,4 +1,5 @@
-﻿using DAL.Core.Utilities;
+﻿using DAL.Core.Models.Options;
+using DAL.Core.Utilities;
 using DAL.Entities;
 using Dapper;
 
@@ -12,13 +13,34 @@ public class ContactDapperRepository : Repository, IContactRepository
   public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
     => await dbConnection.QueryAsync<ContactEntity>("SELECT * FROM [Contact]");
 
-  public async Task<ContactEntity?> GetByIDAsync(int id, CancellationToken token = default)
+  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
   {
-    var results = await GetByIDsAsync([id], token);
-    return results.FirstOrDefault();
+    var fill_options = options as ContactFillOptions ?? new ContactFillOptions();
+    
+    var command = "SELECT C.* FROM [Contact] AS C WHERE ID = @ID;"
+                + "SELECT A.ID, A.ContactID, A.AddressType AS 'Type', A.StreetAddress AS 'Street', A.City, A.StateID, A.PostalCode FROM [Address] AS A WHERE ContactID = @ID";
+
+    using (var multiple_results = await dbConnection.QueryMultipleAsync(command, new { ID = id }))
+    {
+      var contact = multiple_results.Read<ContactEntity>().SingleOrDefault();
+
+      if (contact is not null && fill_options.IncludeAddressesProperty)
+      {
+        var addresses = multiple_results.Read<AddressEntity>().ToList();
+        contact.Addresses.AddRange(addresses ?? []);
+      }
+
+      return contact;
+    }
   }
 
-  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, CancellationToken token = default)
+  //public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
+  //{
+  //  var results = await GetByIDsAsync([id], options, token);
+  //  return results.FirstOrDefault();
+  //}
+
+  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
   {
     var separator  = ',';
 
