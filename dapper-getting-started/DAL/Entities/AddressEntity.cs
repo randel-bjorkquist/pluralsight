@@ -19,6 +19,7 @@ namespace DAL.Entities;
 public class AddressEntity
 {
   public int ID               { get; set; }
+  public int ContactID        { get; set; }
   public string AddressType   { get; set; } = string.Empty;
   public string StreetAddress { get; set; } = string.Empty;
   public string City          { get; set; } = string.Empty;

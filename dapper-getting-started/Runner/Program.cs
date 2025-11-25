@@ -33,16 +33,23 @@ internal class Program
 
     #endregion
 
+    #region Test Call: GetByID with ContactFillOptions to include Addresses
+    //
+    //var repository = RepositoryFactory.CreateContactRepository();
+    //
+    //var mjs_id  = 1;
+    //var options = new ContactFillOptions { IncludeAddressesProperty = true };
+    //
+    //var mj = repository.GetByIDAsync(mjs_id, options)
+    //                   .GetAwaiter()
+    //                   .GetResult();
+    //mj?.Output();
+    //
+    #endregion
 
-    var repository = RepositoryFactory.CreateContactRepository();
 
-    var mjs_id  = 1;
-    var options = new ContactFillOptions { IncludeAddressesProperty = true };
-
-    var mj = repository.GetByIDAsync(mjs_id, options)
-                       .GetAwaiter()
-                       .GetResult();
-    mj?.Output();
+    var id = Save_ShouldAssignIdentity_ToNewEntity();
+    Save_ShouldModify_ExistingEntity(id);
 
 
     #region COMMENTED OUT: R&D code for future reference
@@ -185,6 +192,78 @@ internal class Program
     // Assert
     Console.WriteLine("*** Contact Deleted ***");
     Debug.Assert(deleted_contact == null, $"Contact with ID '{id}' should be deleted.");
+  }
+
+  private static int Save_ShouldAssignIdentity_ToNewEntity() 
+  {
+    // Arrange
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
+    var contact = new ContactEntity { FirstName = "Joe"
+                                     ,LastName  = "Blow"
+                                     ,Email     = "joe.blow@gmail.com"
+                                     ,Company   = "Microsoft"
+                                     ,Title     = "Developer" };
+
+    var address = new AddressEntity { AddressType   = "Home"
+                                     ,StreetAddress = "123 Main Street"
+                                     ,City          = "Baltimore"
+                                     ,StateID       = 1
+                                     ,PostalCode    = "22222" };
+
+    contact.Addresses.Add(address);
+
+    // Act
+    var new_contact_entity = repository.SaveAsync(contact)
+                                       .GetAwaiter()
+                                       .GetResult();
+
+    // Assert
+    Debug.Assert(contact.ID != 0);
+    Console.WriteLine("*** Contact Inserted ***");
+    Console.WriteLine($"New ID: {contact.ID}");
+
+    contact.Output();
+    new_contact_entity.Output();
+
+    return new_contact_entity.ID;
+  }
+
+  private static void Save_ShouldModify_ExistingEntity(int id)
+  {
+    // Arrange
+    IContactRepository repository = RepositoryFactory.CreateContactRepository();
+
+    var options = new ContactFillOptions { IncludeAddressesProperty = true };
+    var contact = repository.GetByIDAsync(id, options)
+                            .GetAwaiter()
+                            .GetResult();
+    contact?.Output();
+
+    Debug.Assert(contact != null, $"Contact with ID '{id}' should exist.");
+    
+    contact?.Company = "Updated Company";
+    contact?.Addresses[0].StreetAddress = "456 Main Street";
+
+    // 1st Act: Update
+    repository.SaveAsync(contact!)
+              .GetAwaiter()
+              .GetResult();
+
+    // 2nd Act: Retrieve again to verify
+    IContactRepository repository2 = RepositoryFactory.CreateContactRepository();
+    var updated_contact = repository2.GetByIDAsync(id, options)
+                                     .GetAwaiter()
+                                     .GetResult();
+
+    // Assert
+    Console.WriteLine("*** Contact Updated ***");
+    updated_contact?.Output();
+
+    Debug.Assert( updated_contact?.Company == "Updated Company"
+                 ,"Company should be updated." );
+
+    Debug.Assert(updated_contact?.Addresses.First().StreetAddress == "456 Main Street"
+                 ,"Address should be updated." );
   }
 
   private static class RepositoryFactory

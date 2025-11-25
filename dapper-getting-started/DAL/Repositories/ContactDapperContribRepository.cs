@@ -72,4 +72,12 @@ public class ContactDapperContribRepository : Repository, IContactRepository
 
     return result ? entity : throw new Exception("Update failed");
   }
+
+  public async Task<ContactEntity> SaveAsync(ContactEntity entity, CancellationToken token = default)
+  {
+    if (entity.IsNew)
+      return await CreateAsync(entity, token);
+    else
+      return await UpdateAsync(entity,  token);
+  }
 }
