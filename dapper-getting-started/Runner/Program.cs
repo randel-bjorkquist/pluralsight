@@ -10,8 +10,8 @@ internal class Program
 {
   static void Main()
   {
-    //NOTE: defines which repository: 'ContactDapperRepository' or 'ContactDapperContribRepository' is being configured
-    RepositoryFactory.isContrib = false;
+    //NOTE: defines which repository type to use: 'Dapper', 'DapperContrib', or 'DapperStoredProcedure'
+    RepositoryFactory.Type = RepositoryType.DapperStoredProcedure;
 
     #region Initial Test Calls, simply CRUD operations
 
@@ -266,9 +266,16 @@ internal class Program
                  ,"Address should be updated." );
   }
 
+  private enum RepositoryType : short
+  {
+     Dapper                 = 1
+    ,DapperContrib          = 2
+    ,DapperStoredProcedure  = 3
+  }
+
   private static class RepositoryFactory
   {
-    public static bool isContrib = true;
+    public static RepositoryType Type = RepositoryType.Dapper;
 
     //NOTE: Builds a connection string manually via SqlFactory;
     //      DO NOT use the 'expression-bodied' syntax here!
@@ -282,15 +289,19 @@ internal class Program
                         .ConnectionString;
 
     public static IContactRepository CreateContactRepository()
-      => isContrib 
-          ? CreateContactDapperContribRepository()
-          : CreateContactDapperRepository();
+      => Type switch { RepositoryType.Dapper                => CreateContactDapperRepository()
+                      ,RepositoryType.DapperContrib         => CreateContactDapperContribRepository()
+                      ,RepositoryType.DapperStoredProcedure => CreateContactDapperStoredProcedureRepository()
+                      ,_                                    => throw new NotSupportedException("The specified repository type is not supported.") }; 
 
     public static IContactRepository CreateContactDapperRepository()
       => new ContactDapperRepository(ConnectionString);
 
     public static IContactRepository CreateContactDapperContribRepository()
       => new ContactDapperContribRepository(ConnectionString);
+
+    public static IContactRepository CreateContactDapperStoredProcedureRepository()
+      => new ContactDapperStoredProcedureRepository(ConnectionString);
   }
 
   #region COMMENTED OUT: R&D code (BuildConfiguration and ContactDapperRepository methods)
