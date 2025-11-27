@@ -23,19 +23,19 @@ public class ContactDapperContribRepository : Repository, IContactRepository
   public ContactDapperContribRepository(string connection_string) 
     : base(connection_string) { }
 
-  public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
+  public async Task<IEnumerable<ContactEntity>> GetAllAsync()
     => await dbConnection.GetAllAsync<ContactEntity>();
 
-  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
+  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default)
   {
     //NOTE: Using Dapper.Contrib's GetAsync method for simplicity ...
-    //=> await dbConnection.GetAsync<ContactEntity?>(id);
+    return await dbConnection.GetAsync<ContactEntity?>(id);
 
-    var results = await GetByIDsAsync( [id], options, token); 
-    return results.FirstOrDefault();
+    //var results = await GetByIDsAsync( [id], options); 
+    //return results.FirstOrDefault();
   }
 
-  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
+  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default)
   {
     var separator = ',';
     var commant = "SELECT C.* "
@@ -48,7 +48,7 @@ public class ContactDapperContribRepository : Repository, IContactRepository
                                                               ,separator });
   }
 
-  public async Task<ContactEntity> CreateAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> CreateAsync(ContactEntity entity)
   {
     var id = await dbConnection.InsertAsync(entity);
 
@@ -63,21 +63,21 @@ public class ContactDapperContribRepository : Repository, IContactRepository
     //return Task.FromResult(entity);
   }
 
-  public async Task<bool> DeleteAsync(int id, CancellationToken token = default)
+  public async Task<bool> DeleteAsync(int id)
     => await dbConnection.DeleteAsync<ContactEntity>(new ContactEntity { ID = id });
 
-  public async Task<ContactEntity> UpdateAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> UpdateAsync(ContactEntity entity)
   {
     var result = await dbConnection.UpdateAsync<ContactEntity>(entity);
 
     return result ? entity : throw new Exception("Update failed");
   }
 
-  public async Task<ContactEntity> SaveAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> SaveAsync(ContactEntity entity)
   {
     if (entity.IsNew)
-      return await CreateAsync(entity, token);
+      return await CreateAsync(entity);
     else
-      return await UpdateAsync(entity,  token);
+      return await UpdateAsync(entity);
   }
 }

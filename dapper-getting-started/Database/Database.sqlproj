@@ -66,7 +66,7 @@
   <ItemGroup>
     <Build Include="dbo\Stored Procedures\AddressDelete.sql" />
     <Build Include="dbo\Stored Procedures\ContactDelete.sql" />
-    <Build Include="dbo\Stored Procedures\ContactGetByID.sql" />
+    <Build Include="dbo\Stored Procedures\ContactGetByID_MultiRead.sql" />
     <Build Include="dbo\Stored Procedures\AddressUpdate.sql" />
     <Build Include="dbo\Stored Procedures\ContactUpdate.sql" />
     <Build Include="dbo\Tables\Address.sql" />
@@ -82,6 +82,12 @@
     <Build Include="dbo\Functions\Table-Value Functions\fn_CsvToVarchar.sql" />
     <Build Include="dbo\Stored Procedures\AddressSave.sql" />
     <Build Include="dbo\Stored Procedures\ContactSave.sql" />
+    <Build Include="dbo\Stored Procedures\ContactGetAll.sql" />
+    <Build Include="dbo\Stored Procedures\AddressGetAll.sql" />
+    <Build Include="dbo\Stored Procedures\AddressGetByID.sql" />
+    <Build Include="dbo\Stored Procedures\AddressGetByContactID.sql" />
+    <Build Include="dbo\Stored Procedures\ContactInsert.sql" />
+    <Build Include="dbo\Stored Procedures\ContactGetByID.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="dbo\Scripts\Script.PostDeployment.SeedData.sql" />

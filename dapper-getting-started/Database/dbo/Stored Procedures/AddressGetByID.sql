@@ -1,17 +1,18 @@
 ﻿-------------------------------------------------
-CREATE PROCEDURE [dbo].[ContactGetByID]
+CREATE PROCEDURE [dbo].[AddressGetByID]
 	 @IDs				AS VARCHAR(MAX) = NULL
 	,@separator AS NVARCHAR(50) = NULL
 AS
 SELECT
-	 C.[ID]
-	,C.[FirstName]
-	,C.[LastName]
-	,C.[Email]
-	,C.[Company]
-	,C.[Title]
+	 A.[ID]
+	,A.[ContactID]
+	,A.[AddressType]
+	,A.[StreetAddress]
+	,A.[City]
+	,A.[StateID]
+	,A.[PostalCode]
 FROM 
-	[dbo].[Contact] AS C
+	[dbo].[Address] AS A
 	  INNER JOIN [dbo].[fn_CsvToInt](@IDs, @separator) AS IDs
-			ON C.[ID] = IDs.[value];
+			ON A.[ID] = IDs.[value];
 -------------------------------------------------

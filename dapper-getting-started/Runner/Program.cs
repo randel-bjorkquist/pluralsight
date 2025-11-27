@@ -18,18 +18,18 @@ internal class Program
     //GetAll_ShouldReturn_6Contacts();
     //Insert_ShouldAssignIdentity_ToNewEntity();
 
-    //var id = 8;
-    //var id = Insert_ShouldAssignIdentity_ToNewEntity();
-    //GetByID_ShouldReturn_ContactEntity(id);
+    //var id = 6;
+    var id = Insert_ShouldAssignIdentity_ToNewEntity();
+    GetByID_ShouldReturn_ContactEntity(id);
 
     //var ids = new List<int> { 1, 3, 5, 7 };
     //GetByIDs_ShouldReturn_ContactEntities(ids);
 
     //var id = 8;
-    //Update_ShouldModify_ExistingEntity(id);
+    Update_ShouldModify_ExistingEntity(id);
 
     //var id = 8;
-    //Delete_ShouldRemove_ExistingEntity(id);
+    Delete_ShouldRemove_ExistingEntity(id);
 
     #endregion
 
@@ -48,9 +48,14 @@ internal class Program
     #endregion
 
 
-    var id = Save_ShouldAssignIdentity_ToNewEntity();
-    Save_ShouldModify_ExistingEntity(id);
+    //var id = Save_ShouldAssignIdentity_ToNewEntity();
+    //Save_ShouldModify_ExistingEntity(id);
 
+//    var contacts = RepositoryFactory.CreateContactRepository()
+//                                    .GetAllAsync()
+//                                    .GetAwaiter()
+//                                    .GetResult();
+//    contacts.Output();
 
     #region COMMENTED OUT: R&D code for future reference
 
@@ -103,9 +108,10 @@ internal class Program
     Console.WriteLine($"New ID: {contact.ID}");
 
     contact.Output();
-    new_contact_entity.Output();
-
-    return new_contact_entity.ID;
+    return contact.ID;
+    
+    //new_contact_entity.Output();
+    //return new_contact_entity.ID;
   }
 
   private static void GetByID_ShouldReturn_ContactEntity(int id)

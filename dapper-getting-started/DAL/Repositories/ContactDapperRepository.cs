@@ -13,45 +13,48 @@ public class ContactDapperRepository : Repository, IContactRepository
 
   #region Contact CRUD Operations
 
-  public async Task<IEnumerable<ContactEntity>> GetAllAsync(CancellationToken token = default)
+  public async Task<IEnumerable<ContactEntity>> GetAllAsync()
     => await dbConnection.QueryAsync<ContactEntity>("SELECT * FROM [Contact]");
 
-  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
+  //NOTE: Using 'QueryMultipleAsync' to support multi-fill options
+  public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = default)
   {
     var fill_options = options as ContactFillOptions ?? new ContactFillOptions();
     
     var command = "SELECT C.* FROM [Contact] AS C WHERE ID = @ID;"
                 + "SELECT A.* FROM [Address] AS A WHERE ContactID = @ID";
 
-    using (var multiple_results = await dbConnection.QueryMultipleAsync(command, new { ID = id }))
+    using var multiple_results = await dbConnection.QueryMultipleAsync(command, new { ID = id });
+
+    var contact = multiple_results.Read<ContactEntity>().SingleOrDefault();
+
+    if (contact is not null && fill_options.IncludeAddressesProperty)
     {
-      var contact = multiple_results.Read<ContactEntity>().SingleOrDefault();
-
-      if (contact is not null && fill_options.IncludeAddressesProperty)
-      {
-        var addresses = multiple_results.Read<AddressEntity>().ToList();
-        contact.Addresses.AddRange(addresses ?? []);
-      }
-
-      return contact;
+      var addresses = multiple_results.Read<AddressEntity>().ToList();
+      contact.Addresses.AddRange(addresses ?? []);
     }
+
+    return contact;
+
+    #region COMMENTED OUT: Original Code
+    //
+    //using (var multiple_results = await dbConnection.QueryMultipleAsync(command, new { ID = id }))
+    //{
+    //  var contact = multiple_results.Read<ContactEntity>().SingleOrDefault();
+    //
+    //  if (contact is not null && fill_options.IncludeAddressesProperty)
+    //  {
+    //    var addresses = multiple_results.Read<AddressEntity>().ToList();
+    //    contact.Addresses.AddRange(addresses ?? []);
+    //  }
+    //
+    //  return contact;
+    //}
+    //
+    #endregion
   }
 
-  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
-  {
-    var separator  = ',';
-
-    var command = $"SELECT C.* "
-                + $"FROM [Contact] AS C "
-                + $"INNER JOIN fn_CsvToInt(@IDs, @separator) AS IDs "
-                + $"ON C.ID = IDs.[value]";
-
-    return await dbConnection.QueryAsync<ContactEntity>( command
-                                                        ,new { IDs = ids.Join(separator)
-                                                              ,separator });
-  }
-
-  #region COMMENTED OUT: R&D code
+  #region COMMENTED OUT: R&D CODE (WIP, multi-read/multi-fill)
   //
   //public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default, CancellationToken token = default)
   //{
@@ -77,7 +80,21 @@ public class ContactDapperRepository : Repository, IContactRepository
   //
   #endregion
 
-  public async Task<ContactEntity> CreateAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = default)
+  {
+    var separator  = ',';
+
+    var command = $"SELECT C.* "
+                + $"FROM [Contact] AS C "
+                + $"INNER JOIN fn_CsvToInt(@IDs, @separator) AS IDs "
+                + $"ON C.ID = IDs.[value]";
+
+    return await dbConnection.QueryAsync<ContactEntity>( command
+                                                        ,new { IDs = ids.Join(separator)
+                                                              ,separator });
+  }
+
+  public async Task<ContactEntity> CreateAsync(ContactEntity entity)
   {
     var command = "INSERT INTO [Contact] (FirstName, LastName, Email, Company, Title) " 
                 + "VALUES (@FirstName, @LastName, @Email, @Company, @Title); " 
@@ -89,7 +106,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     return entity;
   }
 
-  public async Task<ContactEntity> UpdateAsync(ContactEntity entity, CancellationToken token = default)
+  public async Task<ContactEntity> UpdateAsync(ContactEntity entity)
   {
     var command = "UPDATE [Contact] "
                 + "SET FirstName = @FirstName, "
@@ -117,7 +134,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     //                         .ContinueWith(_ => entity, token);
   }
 
-  public async Task<bool> DeleteAsync(int id, CancellationToken token = default)
+  public async Task<bool> DeleteAsync(int id)
   {
     var command = "DELETE FROM [Contact] WHERE ID = @ID";
     var affected_rows = await dbConnection.ExecuteAsync( command
@@ -126,14 +143,14 @@ public class ContactDapperRepository : Repository, IContactRepository
     return affected_rows == 1;
   }
 
-  public async Task<ContactEntity> SaveAsync(ContactEntity contact, CancellationToken token = default)
+  public async Task<ContactEntity> SaveAsync(ContactEntity contact)
   {
     using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
     if (contact.IsNew)
-      await CreateAsync(contact, token);
+      await CreateAsync(contact);
     else
-      await UpdateAsync(contact, token);
+      await UpdateAsync(contact);
 
     //NOTE: Ensure each Address has the correct 'ContactID'
     foreach (var address in contact.Addresses)
@@ -146,7 +163,7 @@ public class ContactDapperRepository : Repository, IContactRepository
       //else                        await UpdateAsync(address, token);
     }
 
-    await SaveAsync(contact.Addresses, token);
+    await SaveAsync(contact.Addresses);
       
     transaction_scope.Complete();
 
@@ -157,13 +174,13 @@ public class ContactDapperRepository : Repository, IContactRepository
 
   #region Address CRUD Operations
 
-  public async Task<AddressEntity?> SaveAsync(AddressEntity entity, CancellationToken token = default)
+  public async Task<AddressEntity?> SaveAsync(AddressEntity entity)
   {
-    var result = await SaveAsync([entity], token);
+    var result = await SaveAsync([entity]);
     return result.FirstOrDefault();
   }
 
-  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities, CancellationToken token = default)
+  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities)
   {
     using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
     //var result = new List<AddressEntity>();
@@ -171,14 +188,14 @@ public class ContactDapperRepository : Repository, IContactRepository
     var addresses_to_delete = entities.Where(e =>  e.IsDeleted).ToList();
     var addresses_to_save   = entities.Where(e => !e.IsDeleted).ToList();
 
-    await DeleteAsync(addresses_to_delete, token);
+    await DeleteAsync(addresses_to_delete);
 
     foreach (var entity in addresses_to_save)
     {
       if (entity.IsNew)
-        await CreateAsync(entity, token);
+        await CreateAsync(entity);
       else
-        await UpdateAsync(entity, token);
+        await UpdateAsync(entity);
       
       //result.Add(entity);
     }
@@ -189,7 +206,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     return addresses_to_save;
   }
 
-  public async Task<AddressEntity> CreateAsync(AddressEntity entity, CancellationToken token = default)
+  public async Task<AddressEntity> CreateAsync(AddressEntity entity)
   {
     var command = "INSERT INTO [Address] (ContactID, AddressType, StreetAddress, City, StateID, PostalCode) " 
                 + "VALUES (@ContactID, @AddressType, @StreetAddress, @City, @StateID, @PostalCode); " 
@@ -201,7 +218,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     return entity;
   }
 
-  public async Task<AddressEntity> UpdateAsync(AddressEntity entity, CancellationToken token = default)
+  public async Task<AddressEntity> UpdateAsync(AddressEntity entity)
   {
     var command = "UPDATE [Address] "
                 + "SET AddressType   = @AddressType, "
@@ -215,9 +232,9 @@ public class ContactDapperRepository : Repository, IContactRepository
     return entity;
   }
 
-  public async Task<bool> DeleteAsync(AddressEntity entity, CancellationToken token = default)
+  public async Task<bool> DeleteAsync(AddressEntity entity)
   {
-    return await DeleteAsync([entity], token);
+    return await DeleteAsync([entity]);
 
     //var command = "DELETE FROM [Address] WHERE ID = @ID";
     //var affected_rows = await dbConnection.ExecuteAsync( command
@@ -226,7 +243,7 @@ public class ContactDapperRepository : Repository, IContactRepository
     //return affected_rows == 1;
   }
 
-  public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> entities, CancellationToken token = default)
+  public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> entities)
   {
     if (entities.IsNullOrEmpty())
       return true;
