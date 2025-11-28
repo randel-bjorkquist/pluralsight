@@ -207,9 +207,7 @@ public class ContactDapperRepository : Repository, IContactRepository
   }
 
   public async Task<bool> DeleteAsync(AddressEntity entity)
-  {
-    return await DeleteAsync([entity]);
-  }
+    => await DeleteAsync([entity]);
 
   public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> entities)
   {
@@ -235,10 +233,7 @@ public class ContactDapperRepository : Repository, IContactRepository
   }
 
   public async Task<AddressEntity?> SaveAsync(AddressEntity entity)
-  {
-    var result = await SaveAsync([entity]);
-    return result.FirstOrDefault();
-  }
+    => (await SaveAsync([entity])).FirstOrDefault();
 
   public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities)
   {

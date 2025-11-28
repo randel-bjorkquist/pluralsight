@@ -19,9 +19,7 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
                                                     ,commandType: CommandType.StoredProcedure );
 
   public async Task<ContactEntity?> GetByIDAsync(int id, FillOptions<ContactEntity>? options = null)
-    => GetByIDsAsync([id], options).GetAwaiter()
-                                   .GetResult()
-                                   .FirstOrDefault();
+    => (await GetByIDsAsync([id], options)).FirstOrDefault();
   
   public async Task<IEnumerable<ContactEntity>> GetByIDsAsync(IEnumerable<int> ids, FillOptions<ContactEntity>? options = null)
   {
@@ -299,9 +297,7 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
   }
 
   public async Task<bool> DeleteAsync(AddressEntity address)
-  {
-    return await DeleteAsync([address]);
-  }
+    => await DeleteAsync([address]);
 
   public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> addresses)
   {
@@ -329,10 +325,7 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
   }
 
   public async Task<AddressEntity?> SaveAsync(AddressEntity address)
-  {
-    var result = await SaveAsync([address]);
-    return result.FirstOrDefault();
-  }
+    => (await SaveAsync([address])).FirstOrDefault();
 
   public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> addresses)
   {
