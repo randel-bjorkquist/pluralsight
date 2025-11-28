@@ -14,5 +14,5 @@ public interface IContactRepository
   Task<ContactEntity> UpdateAsync(ContactEntity entity);
   Task<bool> DeleteAsync(int id);
 
-  Task<ContactEntity> SaveAsync(ContactEntity entity);
+  Task<ContactEntity?> SaveAsync(ContactEntity entity);
 }

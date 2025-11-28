@@ -143,9 +143,15 @@ public class ContactDapperRepository : Repository, IContactRepository
     return affected_rows == 1;
   }
 
-  public async Task<ContactEntity> SaveAsync(ContactEntity contact)
+  public async Task<ContactEntity?> SaveAsync(ContactEntity contact)
   {
     using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+    if (contact.IsDeleted)
+    {
+      await DeleteAsync(contact.ID);
+      return null;
+    }
 
     if (contact.IsNew)
       await CreateAsync(contact);
@@ -173,38 +179,6 @@ public class ContactDapperRepository : Repository, IContactRepository
   #endregion
 
   #region Address CRUD Operations
-
-  public async Task<AddressEntity?> SaveAsync(AddressEntity entity)
-  {
-    var result = await SaveAsync([entity]);
-    return result.FirstOrDefault();
-  }
-
-  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities)
-  {
-    using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-    //var result = new List<AddressEntity>();
-
-    var addresses_to_delete = entities.Where(e =>  e.IsDeleted).ToList();
-    var addresses_to_save   = entities.Where(e => !e.IsDeleted).ToList();
-
-    await DeleteAsync(addresses_to_delete);
-
-    foreach (var entity in addresses_to_save)
-    {
-      if (entity.IsNew)
-        await CreateAsync(entity);
-      else
-        await UpdateAsync(entity);
-      
-      //result.Add(entity);
-    }
-
-    transaction_scope.Complete();
-
-    //return result;
-    return addresses_to_save;
-  }
 
   public async Task<AddressEntity> CreateAsync(AddressEntity entity)
   {
@@ -235,12 +209,6 @@ public class ContactDapperRepository : Repository, IContactRepository
   public async Task<bool> DeleteAsync(AddressEntity entity)
   {
     return await DeleteAsync([entity]);
-
-    //var command = "DELETE FROM [Address] WHERE ID = @ID";
-    //var affected_rows = await dbConnection.ExecuteAsync( command
-    //                                                    ,new { entity.ID });
-    //
-    //return affected_rows == 1;
   }
 
   public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> entities)
@@ -264,6 +232,34 @@ public class ContactDapperRepository : Repository, IContactRepository
                                                               ,separator });
     
     return affected_rows == ids.Count;
+  }
+
+  public async Task<AddressEntity?> SaveAsync(AddressEntity entity)
+  {
+    var result = await SaveAsync([entity]);
+    return result.FirstOrDefault();
+  }
+
+  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities)
+  {
+    using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+    var addresses_to_delete = entities.Where(e =>  e.IsDeleted).ToList();
+    var addresses_to_save   = entities.Where(e => !e.IsDeleted).ToList();
+
+    await DeleteAsync(addresses_to_delete);
+
+    foreach (var entity in addresses_to_save)
+    {
+      if (entity.IsNew)
+        await CreateAsync(entity);
+      else
+        await UpdateAsync(entity);
+    }
+
+    transaction_scope.Complete();
+
+    return addresses_to_save;
   }
 
   #endregion

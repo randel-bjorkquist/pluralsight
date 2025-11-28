@@ -36,13 +36,19 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
     var contacts = await dbConnection.QueryAsync<ContactEntity>( sql: stored_procedure_name
                                                                 ,param: parameters
                                                                 ,commandType: CommandType.StoredProcedure);
-    
+
     if (!contacts.IsNullOrEmpty() && fill_options.IncludeAddressesProperty)
     {
       var addresses = await AddressGetByContactIDsAsync(ids);
 
       foreach (var contact in contacts)
-        contact.Addresses = addresses.Where(a => a.ContactID == contact.ID).ToList();
+      {
+        //NOTE: using the new 'collection expression'
+        contact.Addresses = [.. addresses.Where(a => a.ContactID == contact.ID)];
+        
+        //contact.Addresses = addresses.Where(a => a.ContactID == contact.ID)
+        //                             .ToList();
+      }
     }
     
     return contacts;
@@ -82,9 +88,9 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
     contact_parameters.Add("@Title", contact.Title);
     contact_parameters.Add("@Email", contact.Email);
 
-    var affected_rows = await dbConnection.ExecuteAsync( stored_procedure_name
-                                                        ,contact_parameters
-                                                        ,commandType: CommandType.StoredProcedure );
+    await dbConnection.ExecuteAsync( stored_procedure_name
+                                    ,contact_parameters
+                                    ,commandType: CommandType.StoredProcedure );
     
     contact.ID = contact_parameters.Get<int>("@ID");
 
@@ -130,68 +136,88 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
     return affected_rows == 1;
   }
 
-  public async Task<ContactEntity> SaveAsync(ContactEntity contact)
+  public async Task<ContactEntity?> SaveAsync(ContactEntity contact)
   {
     using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
-    var contact_parameters = new DynamicParameters();
-    contact_parameters.Add("@ID", value: contact.ID, dbType: DbType.Int32, direction: ParameterDirection.InputOutput);
-
-    contact_parameters.Add("@FirstName", contact.FirstName);
-    contact_parameters.Add("@LastName", contact.LastName);
-
-    contact_parameters.Add("@Email", contact.Email);
-    contact_parameters.Add("@Company", contact.Company);
-    contact_parameters.Add("@Title", contact.Title);
-
-    await dbConnection.ExecuteAsync( "ContactSave"
-                                    ,contact_parameters
-                                    ,commandType: CommandType.StoredProcedure );
-    //var contact_affected_rows = await dbConnection.ExecuteAsync( "ContactSave"
-    //                                                            ,contact_parameters
-    //                                                            ,commandType: CommandType.StoredProcedure );
-
-    contact.ID = contact_parameters.Get<int>("@ID");
-
-    var addresses_to_delete  = contact.Addresses.Where(a =>  a.IsDeleted);
-    var addresses_to_save    = contact.Addresses.Where(a => !a.IsDeleted);
-
-    foreach(var address in addresses_to_save)
+    
+    if (contact.IsDeleted)
     {
+      await DeleteAsync(contact.ID);
+      return null;
+    }
+    
+    if (contact.IsNew)
+      await CreateAsync(contact);
+    else
+      await UpdateAsync(contact);
+
+    foreach (var address in contact.Addresses)
       address.ContactID = contact.ID;
 
-      var address_parameters = new DynamicParameters( new { address.ContactID
-                                                           ,address.AddressType 
-                                                           ,address.StreetAddress
-                                                           ,address.City
-                                                           ,address.StateID
-                                                           ,address.PostalCode });
+    await SaveAsync(contact.Addresses);
 
-      address_parameters.Add("@ID", address.ID, DbType.Int32, ParameterDirection.InputOutput);
-      
-      await dbConnection.ExecuteAsync( "AddressSave"
-                                      ,address_parameters
-                                      ,commandType: CommandType.StoredProcedure );
-      //var address_affected_rows = await dbConnection.ExecuteAsync( "AddressSave"
-      //                                                            ,address_parameters
-      //                                                            ,commandType: CommandType.StoredProcedure );
-
-      address.ID = address_parameters.Get<int>("@ID");
-    }
-
-    foreach(var address in addresses_to_delete)
-    {
-      await dbConnection.ExecuteAsync( "AddressDelete"
-                                      ,new { address.ID }
-                                      ,commandType: CommandType.StoredProcedure);
-      //var deleted_rows = await dbConnection.ExecuteAsync( "AddressDelete"
-      //                                                   ,new { ID = address.ID }
-      //                                                   ,commandType: CommandType.StoredProcedure);
-    }
-
+    #region COMMENTED OUT: original code
+    //
+    //var contact_parameters = new DynamicParameters();
+    //contact_parameters.Add("@ID", value: contact.ID, dbType: DbType.Int32, direction: ParameterDirection.InputOutput);
+    //
+    //contact_parameters.Add("@FirstName", contact.FirstName);
+    //contact_parameters.Add("@LastName", contact.LastName);
+    //
+    //contact_parameters.Add("@Email", contact.Email);
+    //contact_parameters.Add("@Company", contact.Company);
+    //contact_parameters.Add("@Title", contact.Title);
+    //
+    //await dbConnection.ExecuteAsync( "ContactSave"
+    //                                ,contact_parameters
+    //                                ,commandType: CommandType.StoredProcedure );
+    ////var contact_affected_rows = await dbConnection.ExecuteAsync( "ContactSave"
+    ////                                                            ,contact_parameters
+    ////                                                            ,commandType: CommandType.StoredProcedure );
+    //
+    //contact.ID = contact_parameters.Get<int>("@ID");
+    //
+    //var addresses_to_delete  = contact.Addresses.Where(a =>  a.IsDeleted);
+    //var addresses_to_save    = contact.Addresses.Where(a => !a.IsDeleted);
+    //
+    //foreach(var address in addresses_to_save)
+    //{
+    //  address.ContactID = contact.ID;
+    //
+    //  var address_parameters = new DynamicParameters( new { address.ContactID
+    //                                                       ,address.AddressType 
+    //                                                       ,address.StreetAddress
+    //                                                       ,address.City
+    //                                                       ,address.StateID
+    //                                                       ,address.PostalCode });
+    //
+    //  address_parameters.Add("@ID", address.ID, DbType.Int32, ParameterDirection.InputOutput);
+    //  
+    //  await dbConnection.ExecuteAsync( "AddressSave"
+    //                                  ,address_parameters
+    //                                  ,commandType: CommandType.StoredProcedure );
+    //  //var address_affected_rows = await dbConnection.ExecuteAsync( "AddressSave"
+    //  //                                                            ,address_parameters
+    //  //                                                            ,commandType: CommandType.StoredProcedure );
+    //
+    //  address.ID = address_parameters.Get<int>("@ID");
+    //}
+    //
+    //foreach(var address in addresses_to_delete)
+    //{
+    //  await dbConnection.ExecuteAsync( "AddressDelete"
+    //                                  ,new { address.ID }
+    //                                  ,commandType: CommandType.StoredProcedure);
+    //  //var deleted_rows = await dbConnection.ExecuteAsync( "AddressDelete"
+    //  //                                                   ,new { ID = address.ID }
+    //  //                                                   ,commandType: CommandType.StoredProcedure);
+    //}
+    //
+    #endregion
+    
     //var delete_result = await DeleteAsync(addresses_to_delete);
     //await SaveAsync(contact.Addresses, token);
-
+    
     transaction_scope.Complete();
 
     return contact;
@@ -227,19 +253,93 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
                                                         ,commandType: CommandType.StoredProcedure );
   }
 
-  public async Task<AddressEntity?> SaveAsync(AddressEntity entity)
+  public async Task<AddressEntity> CreateAsync(AddressEntity address)
   {
-    var result = await SaveAsync([entity]);
+    var stored_procedure_name = "AddressInsert";
+    var address_parameters    = new DynamicParameters();
+
+    address_parameters.Add("@ID", value: address.ID, dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+    address_parameters.Add("@ContactID", address.ContactID);
+    address_parameters.Add("@AddressType", address.AddressType);
+
+    address_parameters.Add("@StreetAddress", address.StreetAddress);
+    address_parameters.Add("@City", address.City);
+    address_parameters.Add("@StateID", address.StateID);
+    address_parameters.Add("@PostalCode", address.PostalCode);
+
+    await dbConnection.ExecuteAsync( stored_procedure_name
+                                    ,address_parameters
+                                    ,commandType: CommandType.StoredProcedure );
+
+    address.ID = address_parameters.Get<int>("@ID");
+    
+    return address;
+  }
+
+  public async Task<AddressEntity> UpdateAsync(AddressEntity address)
+  {
+    var stored_procedure_name = "AddressUpdate";
+    var address_parameters    = new DynamicParameters();
+
+    address_parameters.Add("@ID", address.ID);
+    address_parameters.Add("@ContactID", address.ContactID);
+    address_parameters.Add("@AddressType", address.AddressType);
+
+    address_parameters.Add("@StreetAddress", address.StreetAddress);
+    address_parameters.Add("@City", address.City);
+    address_parameters.Add("@StateID", address.StateID);
+    address_parameters.Add("@PostalCode", address.PostalCode);
+
+    await dbConnection.ExecuteAsync( stored_procedure_name
+                                    ,address_parameters
+                                    ,commandType: CommandType.StoredProcedure );
+
+    return address;
+  }
+
+  public async Task<bool> DeleteAsync(AddressEntity address)
+  {
+    return await DeleteAsync([address]);
+  }
+
+  public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> addresses)
+  {
+    if (addresses.IsNullOrEmpty())
+      return true;
+
+    var stored_procedure_name = "AddressDelete";
+    var address_parameters    = new DynamicParameters();
+
+    var separator = ',';
+    
+    var ids = addresses.Where(e => !e.IsDeleted)
+                       .Select(e => e.ID)
+                       .Distinct()
+                       .ToList();
+
+    address_parameters.Add("@IDs", ids);
+    address_parameters.Add("@separator", separator);
+
+    var affected_rows = await dbConnection.ExecuteAsync( stored_procedure_name
+                                                        ,address_parameters
+                                                        ,commandType: CommandType.StoredProcedure );
+    
+    return affected_rows == ids.Count;
+  }
+
+  public async Task<AddressEntity?> SaveAsync(AddressEntity address)
+  {
+    var result = await SaveAsync([address]);
     return result.FirstOrDefault();
   }
 
-  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> entities)
+  public async Task<IEnumerable<AddressEntity>> SaveAsync(IEnumerable<AddressEntity> addresses)
   {
     using var transaction_scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-    //var result = new List<AddressEntity>();
 
-    var addresses_to_delete = entities.Where(e =>  e.IsDeleted).ToList();
-    var addresses_to_save   = entities.Where(e => !e.IsDeleted).ToList();
+    var addresses_to_delete = addresses.Where(e =>  e.IsDeleted).ToList();
+    var addresses_to_save   = addresses.Where(e => !e.IsDeleted).ToList();
 
     await DeleteAsync(addresses_to_delete);
 
@@ -249,74 +349,11 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
         await CreateAsync(address);
       else
         await UpdateAsync(address);
-      
-      //result.Add(entity);
     }
 
     transaction_scope.Complete();
 
-    //return result;
     return addresses_to_save;
-  }
-
-  public async Task<AddressEntity> CreateAsync(AddressEntity entity)
-  {
-    var command = "INSERT INTO [Address] (ContactID, AddressType, StreetAddress, City, StateID, PostalCode) " 
-                + "VALUES (@ContactID, @AddressType, @StreetAddress, @City, @StateID, @PostalCode); " 
-                + "SELECT CAST(SCOPE_IDENTITY() AS INT);";
-    
-    var id = await dbConnection.QuerySingleAsync<int>(command, entity);
-    entity.ID = id;
-    
-    return entity;
-  }
-
-  public async Task<AddressEntity> UpdateAsync(AddressEntity entity)
-  {
-    var command = "UPDATE [Address] "
-                + "SET AddressType   = @AddressType, "
-                + "    StreetAddress = @StreetAddress, "
-                + "    City          = @City, "
-                + "    StateID       = @StateID, "
-                + "    PostalCode    = @PostalCode "
-                + "WHERE ID = @ID";
-    await dbConnection.ExecuteAsync(command, entity);
-
-    return entity;
-  }
-
-  public async Task<bool> DeleteAsync(AddressEntity entity)
-  {
-    return await DeleteAsync([entity]);
-
-    //var command = "DELETE FROM [Address] WHERE ID = @ID";
-    //var affected_rows = await dbConnection.ExecuteAsync( command
-    //                                                    ,new { entity.ID });
-    //
-    //return affected_rows == 1;
-  }
-
-  public async Task<bool> DeleteAsync(IEnumerable<AddressEntity> entities)
-  {
-    if (entities.IsNullOrEmpty())
-      return true;
-
-    var separator = ',';
-    
-    var ids = entities.Where(e => !e.IsDeleted)
-                      .Select(e => e.ID)
-                      .Distinct()
-                      .ToList();
-    
-    var command = "DELETE A FROM [Address] AS A "
-                + "INNER JOIN fn_CsvToInt(@IDs, @separatOr) AS IDs "
-                + "ON A.ID = IDs.[value]";
-    
-    var affected_rows = await dbConnection.ExecuteAsync( command
-                                                        ,new { IDs = ids.Join(separator)
-                                                              ,separator });
-    
-    return affected_rows == ids.Count;
   }
 
   #endregion

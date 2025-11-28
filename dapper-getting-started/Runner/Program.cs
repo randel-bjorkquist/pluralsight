@@ -19,17 +19,17 @@ internal class Program
     //Insert_ShouldAssignIdentity_ToNewEntity();
 
     //var id = 6;
-    var id = Insert_ShouldAssignIdentity_ToNewEntity();
-    GetByID_ShouldReturn_ContactEntity(id);
+    //var id = Insert_ShouldAssignIdentity_ToNewEntity();
+    //GetByID_ShouldReturn_ContactEntity(id);
 
     //var ids = new List<int> { 1, 3, 5, 7 };
     //GetByIDs_ShouldReturn_ContactEntities(ids);
 
     //var id = 8;
-    Update_ShouldModify_ExistingEntity(id);
+    //Update_ShouldModify_ExistingEntity(id);
 
     //var id = 8;
-    Delete_ShouldRemove_ExistingEntity(id);
+    //Delete_ShouldRemove_ExistingEntity(id);
 
     #endregion
 
@@ -47,15 +47,22 @@ internal class Program
     //
     #endregion
 
-
+    #region Test Call: Insert Contact with Address via Save method(s)
+    //
     //var id = Save_ShouldAssignIdentity_ToNewEntity();
     //Save_ShouldModify_ExistingEntity(id);
+    //
+    #endregion
 
-//    var contacts = RepositoryFactory.CreateContactRepository()
-//                                    .GetAllAsync()
-//                                    .GetAwaiter()
-//                                    .GetResult();
-//    contacts.Output();
+    #region COMMENTED OUT: GetAll example usage
+    //
+    //var contacts = RepositoryFactory.CreateContactRepository()
+    //                                .GetAllAsync()
+    //                                .GetAwaiter()
+    //                                .GetResult();
+    //contacts.Output();
+    //
+    #endregion
 
     #region COMMENTED OUT: R&D code for future reference
 
@@ -98,9 +105,9 @@ internal class Program
                                      ,Title     = "Developer" };
 
     // Act
-    var new_contact_entity = repository.CreateAsync(contact)
-                                       .GetAwaiter()
-                                       .GetResult();
+    repository.CreateAsync(contact)
+              .GetAwaiter()
+              .GetResult();
 
     // Assert
     Debug.Assert(contact.ID != 0);
@@ -109,9 +116,6 @@ internal class Program
 
     contact.Output();
     return contact.ID;
-    
-    //new_contact_entity.Output();
-    //return new_contact_entity.ID;
   }
 
   private static void GetByID_ShouldReturn_ContactEntity(int id)
@@ -219,9 +223,9 @@ internal class Program
     contact.Addresses.Add(address);
 
     // Act
-    var new_contact_entity = repository.SaveAsync(contact)
-                                       .GetAwaiter()
-                                       .GetResult();
+    repository.SaveAsync(contact)
+              .GetAwaiter()
+              .GetResult();
 
     // Assert
     Debug.Assert(contact.ID != 0);
@@ -229,9 +233,8 @@ internal class Program
     Console.WriteLine($"New ID: {contact.ID}");
 
     contact.Output();
-    new_contact_entity.Output();
 
-    return new_contact_entity.ID;
+    return contact.ID;
   }
 
   private static void Save_ShouldModify_ExistingEntity(int id)
