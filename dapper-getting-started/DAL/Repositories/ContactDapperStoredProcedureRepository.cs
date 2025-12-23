@@ -119,7 +119,7 @@ public class ContactDapperStoredProcedureRepository : Repository, IContactReposi
     //
     #endregion
 
-    await dbConnection.ExecuteAsync(stored_procedure_name
+    await dbConnection.ExecuteAsync( stored_procedure_name
                                     ,param: contact_parameters
                                     ,commandType: CommandType.StoredProcedure );
 
