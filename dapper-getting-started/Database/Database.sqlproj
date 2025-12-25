@@ -90,6 +90,7 @@
     <Build Include="dbo\Stored Procedures\ContactGetByID.sql" />
     <Build Include="dbo\Stored Procedures\AddressInsert.sql" />
     <Build Include="dbo\Stored Procedures\ContactGetAllWithKeysetSeekPagination.sql" />
+    <Build Include="dbo\Stored Procedures\ContactGetAllWithOffsetPagination.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="dbo\Scripts\Script.PostDeployment.SeedData.sql" />
