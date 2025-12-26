@@ -91,9 +91,20 @@
     <Build Include="dbo\Stored Procedures\AddressInsert.sql" />
     <Build Include="dbo\Stored Procedures\ContactGetAllWithKeysetSeekPagination.sql" />
     <Build Include="dbo\Stored Procedures\ContactGetAllWithOffsetPagination.sql" />
+    <Build Include="dbo\Stored Procedures\UserGetAllWithKeysetSeekPagination.sql" />
+    <Build Include="dbo\Stored Procedures\UserGetAllWithOffsetPagination.sql" />
+    <Build Include="dbo\Stored Procedures\UserDelete.sql" />
+    <Build Include="dbo\Tables\User.sql" />
+    <Build Include="dbo\Stored Procedures\UserGetAll.sql" />
+    <Build Include="dbo\Stored Procedures\UserGetByID.sql" />
+    <Build Include="dbo\Stored Procedures\UserInsert.sql" />
+    <Build Include="dbo\Stored Procedures\UserUpdate.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="dbo\Scripts\Script.PostDeployment.SeedData.sql" />
     <None Include="dbo\Scripts\Script.PostDeployment.AddTableValueFunctions.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="Database.refactorlog" />
   </ItemGroup>
 </Project>

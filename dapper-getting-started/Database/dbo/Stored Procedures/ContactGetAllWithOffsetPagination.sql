@@ -32,7 +32,7 @@ ORDER BY
 
   -- Add stable tie-breaker only if not sorting by ID
   IF @OrderByColumn <> 'ID'
-    SET @SQL += N', ID ASC';
+    SET @SQL += N', [ID] ' + @SortDirection;
 
   SET @SQL += N'
 OFFSET @Offset ROWS 
