@@ -62,6 +62,9 @@
     <Folder Include="dbo\Scripts" />
     <Folder Include="dbo\Functions" />
     <Folder Include="dbo\Functions\Table-Value Functions" />
+    <Folder Include="dbo\Types" />
+    <Folder Include="dbo\Types\User-Defined Table Types" />
+    <Folder Include="dbo\Functions\Scalar-Value Functions" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Stored Procedures\AddressDelete.sql" />
@@ -99,6 +102,10 @@
     <Build Include="dbo\Stored Procedures\UserGetByID.sql" />
     <Build Include="dbo\Stored Procedures\UserInsert.sql" />
     <Build Include="dbo\Stored Procedures\UserUpdate.sql" />
+    <Build Include="dbo\Types\User-Defined Table Types\FilterCriteriaType.sql" />
+    <Build Include="dbo\Stored Procedures\UserGetAllWithFilterOptions.sql" />
+    <Build Include="dbo\Functions\Scalar-Value Functions\fn_SafeQuote.sql" />
+    <Build Include="dbo\Stored Procedures\ContactGetAllWithFilterOptions.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="dbo\Scripts\Script.PostDeployment.SeedData.sql" />
@@ -106,5 +113,8 @@
   </ItemGroup>
   <ItemGroup>
     <RefactorLog Include="Database.refactorlog" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dbo\Types\User-Defined Table Types\AllowedColumnType.sql" />
   </ItemGroup>
 </Project>
